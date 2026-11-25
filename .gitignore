@@ -1,0 +1,32 @@
+# OS Metadata
+.DS_Store
+*/.DS_Store
+*/*/.DS_Store
+Thumbs.db
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Environments
+.venv/
+venv/
+ENV/
+env/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Runtime generated media & cache
+/generated_cards/
+generated_cards/
+/audio_cache/
+audio_cache/
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3

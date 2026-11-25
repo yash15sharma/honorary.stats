@@ -1,11 +1,14 @@
 // Path.js - Screen 5
 // Features: Four cards (Skill gap, Next course, Nearest centre, Schemes),
 // Under Schemes: "Sample data - verify before applying",
-// Listen button on each card (reads aloud via Web Speech API or simulated indicator),
+// Listen button on each card (plays ElevenLabs audio via /api/voice with clean stop/revoke,
+// and graceful fallback to browser speechSynthesis),
 // View Card Again / Start Fresh options.
 
 window.Path = function Path({ t, lang, pathData, onViewCard, onStartFresh }) {
   const [speakingCard, setSpeakingCard] = React.useState(null);
+  const currentAudioRef = React.useRef(null);
+  const currentAudioUrlRef = React.useRef(null);
 
   // Four Cards Data (supports en, hi, kn)
   const course = pathData.next_course || {};
@@ -47,30 +50,91 @@ window.Path = function Path({ t, lang, pathData, onViewCard, onStartFresh }) {
     return s.reason;
   };
 
+  // Clean stop and cleanup of any currently playing audio
+  const stopCurrentAudio = () => {
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current = null;
+    }
+    if (currentAudioUrlRef.current) {
+      URL.revokeObjectURL(currentAudioUrlRef.current);
+      currentAudioUrlRef.current = null;
+    }
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+  };
+
+  React.useEffect(() => {
+    return () => {
+      stopCurrentAudio();
+    };
+  }, []);
+
   const handleListen = (cardId, textToRead) => {
+    // If tapping the already playing card, stop it
     if (speakingCard === cardId) {
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-      }
+      stopCurrentAudio();
       setSpeakingCard(null);
       return;
     }
 
+    stopCurrentAudio();
     setSpeakingCard(cardId);
 
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(textToRead);
-      utterance.lang = lang === "kn" ? "kn-IN" : (lang === "hi" ? "hi-IN" : "en-IN");
-      utterance.rate = 0.95;
-      utterance.onend = () => setSpeakingCard(null);
-      utterance.onerror = () => setSpeakingCard(null);
-      window.speechSynthesis.speak(utterance);
-    } else {
-      setTimeout(() => {
-        setSpeakingCard(null);
-      }, 3500);
-    }
+    // Browser SpeechSynthesis fallback
+    const playFallbackSpeech = () => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(textToRead);
+        utterance.lang = lang === "kn" ? "kn-IN" : (lang === "hi" ? "hi-IN" : "en-IN");
+        utterance.rate = 0.95;
+        utterance.onend = () => setSpeakingCard(null);
+        utterance.onerror = () => setSpeakingCard(null);
+        window.speechSynthesis.speak(utterance);
+      } else {
+        setTimeout(() => setSpeakingCard(null), 3500);
+      }
+    };
+
+    // Attempt streaming from backend /api/voice
+    fetch("/api/voice", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: textToRead, language: lang })
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error(`Voice API returned status ${res.status}`);
+        }
+        const blob = await res.blob();
+        const audioUrl = URL.createObjectURL(blob);
+        currentAudioUrlRef.current = audioUrl;
+
+        const audio = new Audio(audioUrl);
+        currentAudioRef.current = audio;
+
+        audio.onended = () => {
+          setSpeakingCard(null);
+          if (currentAudioUrlRef.current) {
+            URL.revokeObjectURL(currentAudioUrlRef.current);
+            currentAudioUrlRef.current = null;
+          }
+          currentAudioRef.current = null;
+        };
+
+        audio.onerror = () => {
+          playFallbackSpeech();
+        };
+
+        audio.play().catch(() => {
+          playFallbackSpeech();
+        });
+      })
+      .catch((err) => {
+        console.log("Using browser speech synthesis fallback:", err.message);
+        playFallbackSpeech();
+      });
   };
 
   const courseLinkText = lang === "kn" ? "ಕೋರ್ಸ್ ಮಾಹಿತಿ ನೋಡಿ →" : (lang === "hi" ? "कोर्स की जानकारी देखें →" : "View course details →");

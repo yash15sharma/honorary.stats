@@ -32,13 +32,15 @@ window.Confirm = function Confirm({ t, lang, workerData, onUpdateWorker, onConfi
   };
 
   const handleConfirm = () => {
-    onUpdateWorker({
+    const confirmedData = {
       name,
       role,
       skills,
       years_experience: experience
-    });
-    onConfirm();
+    };
+    onUpdateWorker(confirmedData);
+    // Fix async state bug by passing confirmedData directly into onConfirm
+    onConfirm(confirmedData);
   };
 
   const nameLabel = lang === "kn" ? "ನಿಮ್ಮ ಹೆಸರು:" : (lang === "hi" ? "आपका नाम:" : "Your name:");

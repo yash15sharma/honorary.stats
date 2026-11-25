@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>honorary.stats</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #FF9933;
+      --secondary: #138808;
+      --navy: #000080;
+      --bg: #F8FAFC;
+      --card-bg: #FFFFFF;
+      --text: #0F172A;
+      --muted: #64748B;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', 'Noto Sans Devanagari', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .container {
+      max-width: 680px;
+      width: 100%;
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 2.5rem;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+      border: 1px solid #E2E8F0;
+      text-align: center;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.35rem 0.85rem;
+      background: #FEF3C7;
+      color: #92400E;
+      font-size: 0.85rem;
+      font-weight: 700;
+      border-radius: 9999px;
+      margin-bottom: 1rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    h1 {
+      font-size: 2.25rem;
+      font-weight: 800;
+      color: #0F172A;
+      margin-bottom: 0.5rem;
+    }
+    .tagline {
+      font-size: 1.15rem;
+      color: var(--muted);
+      margin-bottom: 2rem;
+    }
+    .roles-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .role-card {
+      background: #F1F5F9;
+      padding: 1.25rem 0.75rem;
+      border-radius: 12px;
+      border: 1px solid #E2E8F0;
+    }
+    .role-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+    .role-title { font-weight: 700; font-size: 1rem; color: #1E293B; }
+    .role-sub { font-size: 0.85rem; color: #64748B; font-weight: 600; }
+    .status-panel {
+      background: #EFF6FF;
+      border: 1px solid #BFDBFE;
+      border-radius: 12px;
+      padding: 1rem;
+      font-size: 0.95rem;
+      color: #1E40AF;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+    }
+    .status-item span { font-weight: 700; }
+    .links {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+    }
+    .btn {
+      display: inline-block;
+      padding: 0.65rem 1.25rem;
+      border-radius: 8px;
+      font-weight: 600;
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: #0F172A; color: white; }
+    .btn-primary:hover { background: #334155; }
+    .btn-secondary { background: #E2E8F0; color: #334155; }
+    .btn-secondary:hover { background: #CBD5E1; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="badge">Hackathon Prototype • Person A Workspace</div>
+    <h1>honorary.stats</h1>
+    <p class="tagline">Voice-first skills recognition & career pathway for informal workers in India (दर्जी • रसोइया • इलेक्ट्रीशियन)</p>
+    
+    <div class="roles-grid">
+      <div class="role-card">
+        <div class="role-icon">✂️</div>
+        <div class="role-title">Tailor</div>
+        <div class="role-sub">दर्जी</div>
+      </div>
+      <div class="role-card">
+        <div class="role-icon">🍳</div>
+        <div class="role-title">Cook</div>
+        <div class="role-sub">रसोइया</div>
+      </div>
+      <div class="role-card">
+        <div class="role-icon">⚡</div>
+        <div class="role-title">Electrician</div>
+        <div class="role-sub">इलेक्ट्रीशियन</div>
+      </div>
+    </div>
+
+    <div class="status-panel">
+      <div class="status-item">Server: <span id="server-status">Online</span></div>
+      <div class="status-item">Health check: <span id="health-status">Checking...</span></div>
+    </div>
+
+    <div class="links">
+      <a href="/docs" target="_blank" class="btn btn-primary">Open API Docs (/docs)</a>
+      <a href="/api/health" target="_blank" class="btn btn-secondary">Check /api/health</a>
+    </div>
+  </div>
+
+  <script>
+    fetch('/api/health')
+      .then(r => r.json())
+      .then(data => {
+        const h = document.getElementById('health-status');
+        h.innerText = `Gemini: ${data.gemini ? 'Ready' : 'No Key'} | ElevenLabs: ${data.elevenlabs ? 'Ready' : 'Fallback'}`;
+      })
+      .catch(() => {
+        document.getElementById('health-status').innerText = 'Unreachable';
+      });
+  </script>
+</body>
+</html>

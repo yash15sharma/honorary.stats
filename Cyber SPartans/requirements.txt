@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+python-dotenv
+google-genai
+elevenlabs
+gTTS
+qrcode[pil]
+python-multipart

@@ -7,26 +7,34 @@ window.SkillCard = function SkillCard({ t, lang, workerData, onSeePath }) {
 
   const cardId = workerData.card_id || "hs-" + Math.random().toString(36).substring(2, 8);
   const yearsText = t.experienceYears.replace("{years}", workerData.years_experience || 8);
+  const publicUrl = workerData.public_card_url || `https://honorary.stats/verify/${cardId}`;
 
-  // Generate WhatsApp Share URL
-  const shareText = encodeURIComponent(
-    `*honorary.stats Skill Card*\n` +
-    `Name: ${workerData.name}\n` +
-    `Role: ${workerData.role}\n` +
-    `Experience: ${workerData.years_experience} years\n` +
-    `Skills: ${(workerData.skills || []).join(", ")}\n` +
-    `View verified profile: https://honorary.stats/card/${cardId}`
-  );
-  const whatsappUrl = `https://wa.me/?text=${shareText}`;
+  // Use backend-provided WhatsApp link or construct a robust fallback
+  let whatsappUrl = workerData.whatsapp_url;
+  if (!whatsappUrl) {
+    const shareText = encodeURIComponent(
+      `*honorary.stats Skill Card*\n` +
+      `Name: ${workerData.name}\n` +
+      `Role: ${workerData.role}\n` +
+      `Experience: ${workerData.years_experience} years\n` +
+      `Skills: ${(workerData.skills || []).join(", ")}\n` +
+      `Verify: ${publicUrl}`
+    );
+    whatsappUrl = `https://wa.me/?text=${shareText}`;
+  }
 
   const handleDownload = () => {
-    setDownloadSuccess(true);
-    setTimeout(() => {
-      window.print();
-    }, 200);
-    setTimeout(() => {
-      setDownloadSuccess(false);
-    }, 4000);
+    if (workerData.download_url) {
+      window.location.href = workerData.download_url;
+    } else {
+      setDownloadSuccess(true);
+      setTimeout(() => {
+        window.print();
+      }, 200);
+      setTimeout(() => {
+        setDownloadSuccess(false);
+      }, 4000);
+    }
   };
 
   const qrTitle = lang === "kn" 
@@ -91,33 +99,37 @@ window.SkillCard = function SkillCard({ t, lang, workerData, onSeePath }) {
         {/* QR Code and Quick Info */}
         <div className="id-card-qr-box">
           <div className="qr-code-graphic" title="Skill verification QR">
-            {/* Clean SVG QR Code Representation */}
-            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-              <rect width="100" height="100" fill="#FFFFFF"/>
-              {/* Corner 1 */}
-              <rect x="10" y="10" width="28" height="28" fill="#26292B"/>
-              <rect x="15" y="15" width="18" height="18" fill="#FFFFFF"/>
-              <rect x="20" y="20" width="8" height="8" fill="#26292B"/>
-              {/* Corner 2 */}
-              <rect x="62" y="10" width="28" height="28" fill="#26292B"/>
-              <rect x="67" y="15" width="18" height="18" fill="#FFFFFF"/>
-              <rect x="72" y="20" width="8" height="8" fill="#26292B"/>
-              {/* Corner 3 */}
-              <rect x="10" y="62" width="28" height="28" fill="#26292B"/>
-              <rect x="15" y="67" width="18" height="18" fill="#FFFFFF"/>
-              <rect x="20" y="72" width="8" height="8" fill="#26292B"/>
-              {/* Inner data blocks */}
-              <rect x="46" y="14" width="8" height="8" fill="#C36145"/>
-              <rect x="46" y="28" width="8" height="8" fill="#5E8A68"/>
-              <rect x="14" y="46" width="8" height="8" fill="#26292B"/>
-              <rect x="28" y="46" width="8" height="8" fill="#4E7699"/>
-              <rect x="46" y="46" width="12" height="12" fill="#26292B"/>
-              <rect x="66" y="46" width="8" height="8" fill="#26292B"/>
-              <rect x="80" y="46" width="8" height="8" fill="#C36145"/>
-              <rect x="46" y="66" width="8" height="8" fill="#5E8A68"/>
-              <rect x="66" y="66" width="12" height="12" fill="#26292B"/>
-              <rect x="82" y="82" width="8" height="8" fill="#4E7699"/>
-            </svg>
+            {/* Live QR Image from backend, or offline SVG fallback */}
+            {workerData.qr_data_uri ? (
+              <img
+                src={workerData.qr_data_uri}
+                alt="Verification QR Code"
+                style={{ width: "100%", height: "100%", objectFit: "contain" }}
+              />
+            ) : (
+              <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <rect width="100" height="100" fill="#FFFFFF"/>
+                <rect x="10" y="10" width="28" height="28" fill="#26292B"/>
+                <rect x="15" y="15" width="18" height="18" fill="#FFFFFF"/>
+                <rect x="20" y="20" width="8" height="8" fill="#26292B"/>
+                <rect x="62" y="10" width="28" height="28" fill="#26292B"/>
+                <rect x="67" y="15" width="18" height="18" fill="#FFFFFF"/>
+                <rect x="72" y="20" width="8" height="8" fill="#26292B"/>
+                <rect x="10" y="62" width="28" height="28" fill="#26292B"/>
+                <rect x="15" y="67" width="18" height="18" fill="#FFFFFF"/>
+                <rect x="20" y="72" width="8" height="8" fill="#26292B"/>
+                <rect x="46" y="14" width="8" height="8" fill="#C36145"/>
+                <rect x="46" y="28" width="8" height="8" fill="#5E8A68"/>
+                <rect x="14" y="46" width="8" height="8" fill="#26292B"/>
+                <rect x="28" y="46" width="8" height="8" fill="#4E7699"/>
+                <rect x="46" y="46" width="12" height="12" fill="#26292B"/>
+                <rect x="66" y="46" width="8" height="8" fill="#26292B"/>
+                <rect x="80" y="46" width="8" height="8" fill="#C36145"/>
+                <rect x="46" y="66" width="8" height="8" fill="#5E8A68"/>
+                <rect x="66" y="66" width="12" height="12" fill="#26292B"/>
+                <rect x="82" y="82" width="8" height="8" fill="#4E7699"/>
+              </svg>
+            )}
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: "0.875rem", fontWeight: "700", color: "var(--text-charcoal)" }}>
@@ -134,6 +146,21 @@ window.SkillCard = function SkillCard({ t, lang, workerData, onSeePath }) {
           {t.cardDisclaimer}
         </div>
       </div>
+
+      {/* Generated Image Preview Link if available */}
+      {workerData.image_url && (
+        <div style={{ textAlign: "center", marginBottom: "var(--space-md)" }}>
+          <a
+            href={workerData.image_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-link"
+            style={{ fontSize: "0.875rem", fontWeight: "700" }}
+          >
+            🖼️ {lang === "kn" ? "ಪೂರ್ಣ ಕಾರ್ಡ್ ಚಿತ್ರವನ್ನು ವೀಕ್ಷಿಸಿ (PNG)" : (lang === "hi" ? "पूरा कार्ड चित्र देखें (PNG)" : "View full generated card PNG")} →
+          </a>
+        </div>
+      )}
 
       {downloadSuccess && (
         <div className="card" style={{ background: "var(--accent-sage-bg)", borderColor: "var(--accent-sage-border)", marginBottom: "var(--space-md)", textAlign: "center", padding: "12px" }}>

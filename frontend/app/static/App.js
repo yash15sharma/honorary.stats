@@ -31,7 +31,12 @@ function App() {
       years_experience: 8,
       card_id: "hs-tailor-8821",
       language: "hi",
-      personaKey: "tailor"
+      personaKey: "tailor",
+      image_url: null,
+      download_url: null,
+      qr_data_uri: null,
+      public_card_url: null,
+      whatsapp_url: null
     };
   });
 
@@ -57,7 +62,6 @@ function App() {
   // Language Toggle (en / hi / kn)
   const toggleLanguage = (newLang) => {
     setLang(newLang);
-    // If worker was populated from a known persona, adjust strings nicely
     const currentPersona = window.samplePersonas?.[workerData.personaKey || "tailor"];
     if (currentPersona) {
       const loc = getPersonaData(currentPersona, newLang);
@@ -79,7 +83,6 @@ function App() {
     setIsLoading(true);
     setErrorMessage("");
 
-    // Set persona's preferred language (Sunita: hi, Ramesh: en, Imran: kn)
     const preferredLang = persona.preferred_language || lang;
     setLang(preferredLang);
 
@@ -93,15 +96,19 @@ function App() {
       card_id: "hs-" + personaKey + "-" + Math.floor(1000 + Math.random() * 9000),
       language: preferredLang,
       transcript: loc.transcript,
-      personaKey: personaKey
+      personaKey: personaKey,
+      image_url: null,
+      download_url: null,
+      qr_data_uri: null,
+      public_card_url: null,
+      whatsapp_url: null
     });
 
     setPathData(persona.path);
 
-    // Smooth demo transition: brief feedback then move to Confirm screen
     setTimeout(() => {
       setIsLoading(false);
-      setStep(3); // Go straight to Confirm screen so user sees verified skills
+      setStep(3); // Go straight to Confirm screen
     }, 450);
   };
 
@@ -111,7 +118,6 @@ function App() {
     setErrorMessage("");
 
     try {
-      // Attempt live backend call first
       const response = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -162,7 +168,12 @@ function App() {
       card_id: "hs-" + Math.floor(1000 + Math.random() * 9000),
       language: lang,
       transcript: inputText,
-      personaKey: detectedPersonaKey
+      personaKey: detectedPersonaKey,
+      image_url: null,
+      download_url: null,
+      qr_data_uri: null,
+      public_card_url: null,
+      whatsapp_url: null
     });
     setPathData(detectedPersona.path);
 
@@ -172,35 +183,61 @@ function App() {
     }, 400);
   };
 
-  // STEP 3 -> STEP 4: Confirm Card (POST /api/card with fallback)
-  const handleConfirmSkills = async () => {
+  // STEP 3 -> STEP 4: Confirm Card (POST /api/card with async bug fix & asset clearing)
+  const handleConfirmSkills = async (confirmedData) => {
     setIsLoading(true);
     setErrorMessage("");
+
+    // Merge directly from confirmedData to eliminate async state lag
+    const confirmedWorker = {
+      ...workerData,
+      ...(confirmedData || {}),
+      language: lang,
+      // Clear stale asset fields before fetching
+      image_url: null,
+      download_url: null,
+      qr_data_uri: null,
+      public_card_url: null,
+      whatsapp_url: null
+    };
 
     try {
       const response = await fetch("/api/card", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: workerData.name,
-          role: workerData.role,
-          skills: workerData.skills,
-          years_experience: workerData.years_experience,
-          language: lang
+          name: confirmedWorker.name,
+          role: confirmedWorker.role,
+          skills: confirmedWorker.skills,
+          years_experience: confirmedWorker.years_experience,
+          language: confirmedWorker.language
         })
       });
 
       if (response.ok) {
         const data = await response.json();
-        setWorkerData(prev => ({ ...prev, card_id: data.card_id || prev.card_id }));
+        setWorkerData(prev => ({
+          ...prev,
+          ...confirmedWorker,
+          card_id: data.card_id || prev.card_id,
+          image_url: data.image_url || null,
+          download_url: data.download_url || null,
+          qr_data_uri: data.qr_data_uri || null,
+          public_card_url: data.public_card_url || null,
+          whatsapp_url: data.whatsapp_url || null
+        }));
         setIsLoading(false);
         setStep(4);
         return;
       }
     } catch (err) {
-      console.log("Using safe client-side fallback card creation");
+      console.log("Using safe client-side fallback card creation:", err);
     }
 
+    setWorkerData(prev => ({
+      ...prev,
+      ...confirmedWorker
+    }));
     setTimeout(() => {
       setIsLoading(false);
       setStep(4);
